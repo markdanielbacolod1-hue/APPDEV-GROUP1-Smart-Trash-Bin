@@ -15,14 +15,14 @@ export function DeviceConsole() {
           This browser can’t talk to USB serial. Open in Chrome or Edge on desktop to connect the Arduino.
         </p>}
       {(status === 'disconnected' || status === 'error') &&
-            <button type="button" onClick={connect} className="w-full rounded-md bg-ink px-3 py-2 text-sm font-medium text-white transition-colors duration-150 hover:bg-ink/85 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent">
+            <button type="button" onClick={connect} className="w-full rounded-md bg-[#171b19] px-3 py-2.5 text-sm font-semibold text-white transition-colors duration-150 hover:bg-[#292f2b] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
         
           {status === 'error' ? 'Retry connection' : 'Connect Arduino (9600 baud)'}
         </button>}
 
       <div>
         <h3 className="text-xs font-medium text-muted">Serial log</h3>
-        <div className="mt-2 h-40 overflow-y-auto rounded-md bg-screen p-3 font-mono text-xs leading-relaxed text-white/85">
+        <div className="mt-2 h-32 overflow-y-auto overflow-x-hidden rounded-md bg-[#111513] p-3 font-mono text-xs leading-relaxed text-gray-200 sm:h-40">
           {log.length === 0 ?
             <p className="text-white/45">No messages yet. Drop an item on the kiosk to see commands.</p> :
             log.map((entry) => <p key={entry.id}>
