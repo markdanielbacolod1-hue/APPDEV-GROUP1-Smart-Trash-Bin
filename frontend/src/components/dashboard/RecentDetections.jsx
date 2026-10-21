@@ -1,26 +1,43 @@
 "use client";
-import React from 'react';
-import { formatDistanceToNowStrict } from 'date-fns';
-import { useDetectionLog } from '../../contexts/DetectionLogContext';
+import React, { useEffect, useState } from "react";
+import { formatDistanceToNowStrict } from "date-fns";
+import { apiGet } from "../../lib/api";
+
 export function RecentDetections() {
-    const { events } = useDetectionLog();
-    if (events.length === 0) {
-        return (<p className="py-6 text-sm text-muted">
-        Nothing yet in this session. Items inserted at the kiosk appear here in real time.
-      </p>);
+  const [detections, setDetections] = useState([]);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    async function load() {
+      try {
+        const rows = await apiGet("/detections?limit=10");
+        if (active) { setDetections(rows); setError(""); }
+      } catch (err) {
+        if (active) setError(err.message || "Could not load detections.");
+      }
     }
-    return (<ul className="max-h-72 divide-y divide-line overflow-y-auto">
-      {events.map((e) => <li key={e.id} className="flex items-center justify-between gap-3 py-2.5 text-sm">
-          <div className="min-w-0">
-            <p className="truncate">{e.item.label}</p>
-            <p className="text-xs text-muted">
-              {(e.confidence * 100).toFixed(1)}% · {e.distanceCm.toFixed(1)} cm ·{' '}
-              {formatDistanceToNowStrict(e.at, { addSuffix: true })}
-            </p>
-          </div>
-          <span className={`shrink-0 text-xs font-medium ${e.item.recyclable ? 'text-accent' : 'text-warn'}`}>
-            {e.item.recyclable ? `+${e.item.riceGrams} g` : 'Residual'}
-          </span>
-        </li>)}
-    </ul>);
+    load();
+    const timer = window.setInterval(load, 15000);
+    return () => { active = false; window.clearInterval(timer); };
+  }, []);
+
+  if (error) return <p role="alert" className="py-6 text-sm text-warn">Could not load database records. Check the backend connection.</p>;
+  if (detections.length === 0) return <p className="py-6 text-sm text-muted">No detection records in MySQL yet.</p>;
+
+  return <ul className="max-h-72 divide-y divide-line overflow-y-auto">
+    {detections.map((item) => {
+      const date = new Date(item.detection_time);
+      const confidence = item.confidence_score == null ? null : Number(item.confidence_score) * 100;
+      return <li key={item.detection_id} className="flex items-center justify-between gap-3 py-2.5 text-sm">
+        <div className="min-w-0">
+          <p className="truncate">{item.detected_label}</p>
+          <p className="text-xs text-muted">
+            {confidence == null ? "Confidence unavailable" : `${confidence.toFixed(1)}% confidence`} · {Number.isNaN(date.getTime()) ? "Time unavailable" : formatDistanceToNowStrict(date, { addSuffix: true })}
+          </p>
+        </div>
+        <span className="shrink-0 text-xs font-medium text-muted">{item.category_name || "Uncategorized"}</span>
+      </li>;
+    })}
+  </ul>;
 }
